@@ -1,0 +1,5 @@
+/* 防止vuejs在解析时出现闪烁 */
+
+[v-cloak] {
+	display: none;
+}

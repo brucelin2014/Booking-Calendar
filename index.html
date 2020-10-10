@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<title></title>
+		<script type="text/javascript">
+			document.addEventListener('plusready', function() {
+				//console.log("所有plus api都应该在此事件发生后调用，否则会出现plus is undefined。"
+
+			});
+		</script>
+
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+			}
+			
+			.selectableDiv {
+				width: 100%;
+				height: 100%;
+				cursor: pointer;
+			}
+			
+			.selectableDiv:hover {
+				background-color: gray;
+				color: white;
+			}
+			
+			table,
+			table tr th,
+			table tr td {
+				border-collapse:collapse;
+				border: 1px solid lightgrey;
+				text-align: center;
+				vertical-align: middle;
+			}
+			
+			.eventRow {
+				display: flex;
+				position: relative;
+				width: 100%;
+				height: 100%;
+			}
+			
+			.eventCell {
+				position: absolute;
+				height: 100%;
+				cursor: pointer;
+				text-align: center;
+			}
+			
+			.eventCell:hover {
+				background-color: gray;
+				color: white;
+			}
+		</style>
+
+		<link rel="stylesheet" href="css/app.css" />
+
+	</head>
+
+	<body onload="vue.loadData()">
+		<div id="app" v-cloak :style="{'font-size': fontSize * zoom + 'px'}">
+			<table style="width: 100%; text-align: center;" cellspacing="0" cellpadding="0">
+				<!--
+                	month and year
+                -->
+				<tr>
+					<th>
+
+					</th>
+					<th colspan="2">
+
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px'}">
+						<div v-on:click="onPreviousMonth" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							<< 
+						</div>
+					</th>
+					<th colspan="3" :style="{height: rowHeight * zoom + 'px'}">
+						<select v-model="selMonth" :style="{height: '100%', 'font-weight': 'bolder', 'font-size': fontSize * zoom + 'px'}" v-on:change="onChangeMonth">
+							<option v-for="option in monthOptions" v-bind:value="option.value">
+								{{ option.text }}
+							</option>
+						</select>
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px'}">
+						<div v-on:click="onNextMonth" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							>>
+						</div>
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px'}" colspan="3">
+                        <div v-on:click="onToday" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							Today
+						</div>
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px'}">
+						<div v-on:click="onPreviousYear" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							<< </div>
+					</th>
+					<th colspan="3" :style="{height: rowHeight * zoom + 'px'}">
+						<select v-model="selYear" :style="{height: '100%', 'font-weight': 'bolder', 'font-size': fontSize * zoom + 'px'}" v-on:change="onChangeYear">
+							<option v-for="option in yearOptions" v-bind:value="option.value">
+								{{ option.text }}
+							</option>
+						</select>
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px'}">
+						<div v-on:click="onNextYear" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							>>
+						</div>
+					</th>
+					<th colspan="2">
+
+					</th>
+				</tr>
+
+				<!--
+                	days
+                -->
+				<tr>
+					<th>
+
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px', width: '5%'}">
+						<div v-on:click="onPreviousDay" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							<< </div>
+					</th>
+					<th v-for="(day, index) in arrDays" v-if="index >= startDay && index < endDay" :style="{height: rowHeight * zoom + 'px', width: '5%'}">
+						<div v-if="isToday(day)" class="selectableDiv" :style="{'background-color': 'black', color: 'white', 'line-height': rowHeight * zoom + 'px'}" v-on:click="onSelectDay(day)">
+							{{day}}-{{selMonthObj.EngName.substr(0, 3)}}
+						</div>
+						<div v-else-if="isSelDay(day)" class="selectableDiv" :style="{'background-color': 'blue', color: 'white', 'line-height': rowHeight * zoom + 'px'}" v-on:click="onSelectDay(day)">
+							{{day}}-{{selMonthObj.EngName.substr(0, 3)}}
+						</div>
+						<div v-else v-on:click="onSelectDay(day)" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px'}">
+							{{day}}-{{selMonthObj.EngName.substr(0, 3)}}
+						</div>
+					</th>
+					<th :style="{height: rowHeight * zoom + 'px', width: '5%'}">
+						<div v-on:click="onNextDay" class="selectableDiv" :style="{'line-height': rowHeight * zoom + 'px', 'font-weight': 'bolder'}">
+							>>
+						</div>
+					</th>
+				</tr>
+
+				<!--
+                	hours
+                -->
+				<tr>
+					<th>
+					</th>
+					<th v-for="(hour, index) in arrHours" :style="{height: rowHeight * zoom + 'px'}">
+						<div v-if="isTodayHour(hour)" :style="{'background-color': 'black', color: 'white', width: '100%', height: '100%', 'line-height': rowHeight * zoom + 'px'}" v-on:mousemove="updateXY">
+							{{hourImpl.GetAmPmHour(hour)}}
+						</div>
+						<div v-else v-on:mousemove="updateXY">
+							{{hourImpl.GetAmPmHour(hour)}}
+						</div>
+					</th>
+				</tr>
+
+				<!--
+                	rooms
+                -->
+				<tr v-for="(room, index) in arrRooms">
+					<td :style="{height: rowHeight * zoom + 'px'}">
+						<div class="selectableDiv" v-on:mousemove="updateXY" :style="{'line-height': rowHeight * zoom + 'px'}">
+							{{room.Name}}
+						</div>
+					</td>
+					<td colspan="17" :style="{height: rowHeight * zoom + 'px'}">
+						<div class="eventRow">
+							<div class="eventCell" v-for="(event, index) in arrEvents" v-if="event.Status == 3 && event.RoomID == room.Code && isSelectedDateEvent(event)" :style="{left: calEventLeftPersen(event) + '%', width: calEventWidthPersen(event) + '%', 'background-color': '#00b0f0', 'line-height': rowHeight * zoom + 'px'}" v-on:mousemove="updateXY" :title="event.showTime()">
+								{{event.BookedBy}}
+							</div>
+
+							<div class="eventCell" v-else-if="event.Status == 1 && event.RoomID == room.Code && isSelectedDateEvent(event)" :style="{left: calEventLeftPersen(event) + '%', width: calEventWidthPersen(event) + '%', 'background-color': '#bfbfbf', 'line-height': rowHeight * zoom + 'px'}" v-on:mousemove="updateXY" :title="event.showTime()">
+								{{event.BookedBy}}
+							</div>
+
+							<div class="eventCell" v-else-if="event.Status == 2 && event.RoomID == room.Code && isSelectedDateEvent(event)" :style="{left: calEventLeftPersen(event) + '%', width: calEventWidthPersen(event) + '%', 'background-color': '#ff0000', 'line-height': rowHeight * zoom + 'px'}" v-on:mousemove="updateXY" :title="event.showTime()">
+								{{event.BookedBy}}
+							</div>
+						</div>
+					</td>
+				</tr>
+
+				<tr style="display: none;">
+					<td>x: {{x}}</td>
+					<td>y: {{y}}</td>
+					<td>w: {{width}}</td>
+					<td>h: {{height}}</td>
+				</tr>
+			</table>
+
+			<div id="js">
+				<script type="text/javascript" src="js/libs/vue.min.js"></script>
+				<script type="text/javascript" src="js/libs/store.min.js"></script>
+				<script type="text/javascript" src="js/libs/jquery.js"></script>
+				<script type="text/javascript" src="js/tools.js"></script>
+
+				<script type="text/javascript" src="js/OptionObj.js"></script>
+				<script type="text/javascript" src="js/MonthObj.js"></script>
+				<script type="text/javascript" src="js/MonthImpl.js"></script>
+				<script type="text/javascript" src="js/YearImpl.js"></script>
+				<script type="text/javascript" src="js/DayImpl.js"></script>
+				<script type="text/javascript" src="js/HourImpl.js"></script>
+				<script type="text/javascript" src="js/RoomObj.js"></script>
+				<script type="text/javascript" src="js/RoomImpl.js"></script>
+				<script type="text/javascript" src="js/EventObj.js"></script>
+				<script type="text/javascript" src="js/EventImpl.js"></script>
+				<script type="text/javascript" src="js/app.js"></script>
+			</div>
+		</div>
+	</body>
+
+</html>
